@@ -20,14 +20,21 @@ type TypePGConfig struct {
 
 type TypeSMTPConfig struct {
 	Server   string `json:"server"`
-	Port     string `json:"port"`
+	Port     int    `json:"port"`
 	Address  string `json:"address"`
 	Password string `json:"password"`
 }
+
+type TypeJWTConfig struct {
+	Secret string `json:"secret"`
+	Expire int    `json:"expire"`
+}
+
 type TypeConfig struct {
 	App  TypeAppConfig  `json:"app"`
 	PG   TypePGConfig   `json:"pg"`
 	SMTP TypeSMTPConfig `json:"smtp"`
+	JWT  TypeJWTConfig  `json:"jwt"`
 }
 
 var Config TypeConfig

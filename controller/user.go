@@ -4,9 +4,11 @@ import (
 	"Go-User-System/config"
 	"Go-User-System/model"
 	"Go-User-System/util"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type paramUserRegister struct {
@@ -104,4 +106,91 @@ func UserVerify(c echo.Context) (err error) {
 	}
 
 	return c.String(http.StatusOK, "")
+}
+
+type paramUserGetToken struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type responseUserGetToken struct {
+	Token  string `json:"token"`
+	Expire int64  `json:"expire_time"`
+}
+
+func UserGetToken(c echo.Context) (err error) {
+	var param paramUserGetToken
+	if err := c.Bind(&param); err != nil {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	if param.Username == "" || param.Password == "" {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数不足")
+	}
+
+	user, is, err := model.GetUserByName(param.Username)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户未注册！")
+	}
+
+	if user.Password != util.MD5(param.Password) {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户名或密码错误！")
+	}
+	if !user.Verified {
+		return util.ErrorResponse(c, http.StatusBadRequest, "邮箱未验证！")
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+	expireTime := time.Now().Add(time.Duration(config.Config.JWT.Expire) * time.Minute).Unix()
+	claims := token.Claims.(jwt.MapClaims)
+	claims["ID"] = user.ID
+	claims["exp"] = expireTime
+	t, err := token.SignedString([]byte(config.Config.JWT.Secret))
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	return c.JSON(http.StatusOK, responseUserGetToken{
+		Token:  t,
+		Expire: expireTime,
+	})
+}
+
+type responseUserGetInfo struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+}
+
+func UserGetInfo(c echo.Context) error {
+	ID, err := strconv.Atoi(c.Param("id"))
+	if ID == 0 || err != nil {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+	isAdmin, err := model.IsUserAdmin(userID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !(userID == ID) && !isAdmin {
+		return util.ErrorResponse(c, http.StatusBadRequest, "权限不足")
+	}
+
+	user, is, err := model.GetUserByID(ID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户不存在")
+	}
+
+	return c.JSON(http.StatusOK, responseUserGetInfo{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Role:     user.Role,
+	})
 }

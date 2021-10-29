@@ -45,8 +45,8 @@ GET /user/token?username="用户名"&password="密码"
 
 ```
 {
-    "token": "令牌",
-    "expire_time": 123456789 // 令牌到期时间
+    "token": "JWT令牌",
+    "expire_time": 1234567890 // JWT令牌到期时间
 }
 ```
 
