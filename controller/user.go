@@ -4,8 +4,10 @@ import (
 	"Go-User-System/config"
 	"Go-User-System/model"
 	"Go-User-System/util"
+	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,7 +19,7 @@ type paramUserRegister struct {
 	Email    string `json:"email"`
 }
 
-func UserRegister(c echo.Context) (err error) {
+func UserRegister(c echo.Context) error {
 	var param paramUserRegister
 	if err := c.Bind(&param); err != nil {
 		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
@@ -75,7 +77,7 @@ type paramUserVerify struct {
 	Code string `json:"code"`
 }
 
-func UserVerify(c echo.Context) (err error) {
+func UserVerify(c echo.Context) error {
 	var param paramUserVerify
 	if err := c.Bind(&param); err != nil {
 		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
@@ -118,7 +120,7 @@ type responseUserGetToken struct {
 	Expire int64  `json:"expire_time"`
 }
 
-func UserGetToken(c echo.Context) (err error) {
+func UserGetToken(c echo.Context) error {
 	var param paramUserGetToken
 	if err := c.Bind(&param); err != nil {
 		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
@@ -328,5 +330,183 @@ func UserUpdateInfo(c echo.Context) error {
 		Username: user.Username,
 		Email:    user.Email,
 		Role:     user.Role,
+	})
+}
+
+func UserDelete(c echo.Context) error {
+	ID, err := strconv.Atoi(c.Param("id"))
+	if ID == 0 || err != nil {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+	isAdmin, err := model.IsUserAdmin(userID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	if !isAdmin {
+		return util.ErrorResponse(c, http.StatusBadRequest, "权限不足")
+	}
+
+	is, err := model.IsUserExistByID(ID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户不存在")
+	}
+
+	err = model.DeleteUser(ID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	return c.String(http.StatusOK, "")
+}
+
+type WXResponse struct {
+	AccessToken string `json:"access_token"`
+	Openid      string `json:"openid"`
+}
+
+type WXResponseInfo struct {
+	Nickname string `json:"nickname"`
+}
+
+type paramUserBindWX struct {
+	Code string `json:"code"`
+}
+
+type responseUserBindWX struct {
+	WXName string `json:"wx_name"`
+}
+
+func UserBindWX(c echo.Context) error {
+	var param paramUserBindWX
+	err := c.Bind(&param)
+	if err != nil || param.Code == "" {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+
+	response, err := http.Get("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" + config.Config.WX.AppID + "&secret=" + config.Config.WX.AppSecret + "&code=" + param.Code + "&grant_type=authorization_code")
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	var wxResponse WXResponse
+	err = json.Unmarshal(body, &wxResponse)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if wxResponse.Openid == "" || wxResponse.AccessToken == "" {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	response, err = http.Get("https://api.weixin.qq.com/sns/userinfo?access_token=" + wxResponse.AccessToken + "&openid=" + wxResponse.Openid + "&lang=zh_CN")
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	body, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	var wxResponseInfo WXResponseInfo
+	err = json.Unmarshal(body, &wxResponseInfo)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if wxResponseInfo.Nickname == "" {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	err = model.BindWX(userID, wxResponseInfo.Nickname, wxResponse.Openid)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	return c.JSON(http.StatusOK, responseUserBindWX{
+		WXName: wxResponseInfo.Nickname,
+	})
+}
+
+type paramUserGetTokenWX struct {
+	Code string `json:"code"`
+}
+
+func UserGetTokenWX(c echo.Context) error {
+	var param paramUserGetTokenWX
+	err := c.Bind(&param)
+	if err != nil || param.Code == "" {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+
+	response, err := http.Get("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" + config.Config.WX.AppID + "&secret=" + config.Config.WX.AppSecret + "&code=" + param.Code + "&grant_type=authorization_code")
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	var wxResponse WXResponse
+	err = json.Unmarshal(body, &wxResponse)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if wxResponse.Openid == "" {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	user, is, err := model.GetUserByWX(wxResponse.Openid)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "未绑定账号！")
+	}
+
+	if !user.Verified {
+		return util.ErrorResponse(c, http.StatusBadRequest, "邮箱未验证！")
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+	expireTime := time.Now().Add(time.Duration(config.Config.JWT.Expire) * time.Minute).Unix()
+	claims := token.Claims.(jwt.MapClaims)
+	claims["ID"] = user.ID
+	claims["exp"] = expireTime
+	t, err := token.SignedString([]byte(config.Config.JWT.Secret))
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	return c.JSON(http.StatusOK, responseUserGetToken{
+		Token:  t,
+		Expire: expireTime,
+	})
+}
+
+type responseUserGetWXInfo struct {
+	WXName string `json:"wx_name"`
+}
+
+func UserGetWXInfo(c echo.Context) error {
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+
+	wxName, is, err := model.GetWXName(userID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "未绑定账号！")
+	}
+
+	return c.JSON(http.StatusOK, responseUserGetWXInfo{
+		WXName: wxName,
 	})
 }

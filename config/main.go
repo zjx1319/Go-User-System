@@ -30,11 +30,17 @@ type TypeJWTConfig struct {
 	Expire int    `json:"expire"`
 }
 
+type TypeWXConfig struct {
+	AppID     string `json:"app_id"`
+	AppSecret string `json:"app_secret"`
+}
+
 type TypeConfig struct {
 	App  TypeAppConfig  `json:"app"`
 	PG   TypePGConfig   `json:"pg"`
 	SMTP TypeSMTPConfig `json:"smtp"`
 	JWT  TypeJWTConfig  `json:"jwt"`
+	WX   TypeWXConfig   `json:"wx"`
 }
 
 var Config TypeConfig

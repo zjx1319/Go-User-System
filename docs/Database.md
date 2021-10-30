@@ -29,7 +29,7 @@ code	 char(32),				-- 邮箱验证码
 ```
 id		 int REFERENCES users(id) ON DELETE CASCADE UNIQUE,
 wxname	 varchar(20),	-- 微信用户名
-openid	 char(28),	-- 微信id
+openid	 char(28) UNIQUE,	-- 微信id
 ```
 
 

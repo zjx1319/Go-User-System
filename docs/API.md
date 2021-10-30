@@ -172,7 +172,7 @@ DELETE /user/:id
 请求：
 
 ```
-GET /user/tokenWX?code="CODE"
+GET /user/WX/token?code="CODE"
 ```
 
 响应：
@@ -186,6 +186,8 @@ GET /user/tokenWX?code="CODE"
 
 ### 9. 绑定微信
 
+说明：CODE由微信登录成功返回，作为换取access_token的票据
+
 权限：
 
 ```
@@ -195,8 +197,36 @@ GET /user/tokenWX?code="CODE"
 请求：
 
 ```
-GET /user/bindW?code="CODE"
+GET /user/WX/bind?code="CODE"
 ```
 
-响应：无
+响应：
+
+```
+{
+    "nickname": "绑定的微信昵称"
+}
+```
+
+### 10. 查询微信绑定
+
+权限：
+
+```
+需要当前用户令牌
+```
+
+请求：
+
+```
+GET /user/WX
+```
+
+响应：
+
+```
+{
+    "wx_name": "已绑定的微信昵称"
+}
+```
 

@@ -125,3 +125,12 @@ func UpdateUser(ID int, user User) (err error) {
 	}
 	return
 }
+
+func DeleteUser(ID int) (err error) {
+	query := "DELETE FROM users WHERE id=$1;"
+	err = PG.QueryRow(query, ID).Scan()
+	if err == sql.ErrNoRows {
+		err = nil
+	}
+	return
+}
