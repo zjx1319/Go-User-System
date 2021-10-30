@@ -5,9 +5,9 @@ import (
 	"strconv"
 )
 
-func AddVerifyCode(code string, user User) (err error) {
+func AddVerifyCode(code string, ID int, Email string) (err error) {
 	query := "INSERT INTO email (id,email,code) VALUES ($1,$2,$3);"
-	err = PG.QueryRow(query, user.ID, user.Email, code).Scan()
+	err = PG.QueryRow(query, ID, Email, code).Scan()
 	if err == sql.ErrNoRows {
 		err = nil
 	}

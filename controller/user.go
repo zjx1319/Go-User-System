@@ -56,7 +56,7 @@ func UserRegister(c echo.Context) (err error) {
 	}
 
 	verifyCode := util.GetRandomString(32)
-	err = model.AddVerifyCode(verifyCode, user)
+	err = model.AddVerifyCode(verifyCode, user.ID, user.Email)
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
@@ -171,12 +171,148 @@ func UserGetInfo(c echo.Context) error {
 		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
 	}
 	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+
+	if !(userID == ID) {
+		isAdmin, err := model.IsUserAdmin(userID)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+		if !isAdmin {
+			return util.ErrorResponse(c, http.StatusBadRequest, "权限不足")
+		}
+	}
+
+	user, is, err := model.GetUserByID(ID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户不存在")
+	}
+
+	return c.JSON(http.StatusOK, responseUserGetInfo{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Role:     user.Role,
+	})
+}
+
+func UserGetAllInfo(c echo.Context) error {
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
 	isAdmin, err := model.IsUserAdmin(userID)
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
-	if !(userID == ID) && !isAdmin {
+	if !isAdmin {
 		return util.ErrorResponse(c, http.StatusBadRequest, "权限不足")
+	}
+
+	users, err := model.GetAllUser()
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+
+	var response []responseUserGetInfo
+	for _, user := range users {
+		response = append(response, responseUserGetInfo{
+			ID:       user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+			Role:     user.Role,
+		})
+	}
+	return c.JSON(http.StatusOK, response)
+}
+
+type paramUserUpdateInfo struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+}
+
+func UserUpdateInfo(c echo.Context) error {
+	var param paramUserUpdateInfo
+	err := c.Bind(&param)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	ID, err := strconv.Atoi(c.Param("id"))
+	if ID == 0 || err != nil {
+		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
+	}
+	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
+	if !(userID == ID) || param.Role != "" {
+		isAdmin, err := model.IsUserAdmin(userID)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+		if !isAdmin {
+			return util.ErrorResponse(c, http.StatusBadRequest, "权限不足")
+		}
+	}
+
+	is, err := model.IsUserExistByID(ID)
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+	}
+	if !is {
+		return util.ErrorResponse(c, http.StatusBadRequest, "用户不存在")
+	}
+
+	if param.Username != "" {
+		is, err = model.IsUserExistByName(param.Username)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+		if is {
+			return util.ErrorResponse(c, http.StatusBadRequest, "用户名已存在")
+		}
+	}
+
+	if param.Email != "" {
+		is, err = model.IsUserExistByEmail(param.Email)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+		if is {
+			return util.ErrorResponse(c, http.StatusBadRequest, "邮箱已使用")
+		}
+	}
+
+	if param.Password != "" {
+		param.Password = util.MD5(param.Password)
+	}
+
+	err = model.UpdateUser(ID, model.User{
+		Username: param.Username,
+		Password: param.Password,
+		Email:    param.Email,
+		Role:     param.Role,
+	})
+
+	if param.Email != "" {
+		verifyCode := util.GetRandomString(32)
+		err = model.AddVerifyCode(verifyCode, ID, param.Email)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+
+		verifyURL := config.Config.App.Address + "/api/v1/user/verify?id=" + strconv.Itoa(ID) + "&code=" + verifyCode
+		err = util.SendEmail(param.Email, "注册邮箱验证", "你好！你的邮箱已更改，请打开以下链接验证你的邮箱：<a href="+verifyURL+">"+verifyURL+"</a>")
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "发送验证邮件失败")
+		}
+
+		err = model.UpdateUserVerified(ID, false)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
+	}
+
+	if err != nil {
+		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
 
 	user, is, err := model.GetUserByID(ID)

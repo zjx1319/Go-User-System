@@ -14,9 +14,9 @@ func initUserGroup(group *echo.Group) {
 
 	group.GET("/verify", controller.UserVerify)
 
-	//group.GET("", controller.UserGetAllInfo)
+	group.GET("", controller.UserGetAllInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
 	group.GET("/:id", controller.UserGetInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
-	//group.PUT("/:id", controller.UserUpdateInfo)
+	group.PUT("/:id", controller.UserUpdateInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
 	//group.DELETE("/:id", controller.UserDelete)
 
 	//group.GET("/tokenWX", controller.UserGetTokenWX)
