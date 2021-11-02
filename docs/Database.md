@@ -4,11 +4,11 @@
 
 ```
 id		 int UNIQUE,
-username varchar(20) UNIQUE,    -- 用户名
-password char(32),				-- MD5加密后的密码
-email	 varchar(50) UNIQUE,		-- 邮箱地址
-verified boolean DEFAULT FALSE,			-- 是否已验证邮箱
-role	 varchar(20) DEFAULT 'default',	-- 权限组
+username varchar(20) UNIQUE,            -- 用户名
+password char(32),                      -- MD5加密后的密码
+email	 varchar(50) UNIQUE,            -- 邮箱地址
+verified boolean DEFAULT FALSE,         -- 是否已验证邮箱
+role	 varchar(20) DEFAULT 'default', -- 权限组
 PRIMARY KEY(id),
 ```
 
@@ -19,7 +19,7 @@ PRIMARY KEY(id),
 ```
 id		 int REFERENCES users(id) ON DELETE CASCADE UNIQUE,
 email	 varchar(50) REFERENCES users(email),
-code	 char(32),				-- 邮箱验证码
+code	 char(32),      -- 邮箱验证码
 ```
 
 
@@ -28,8 +28,8 @@ code	 char(32),				-- 邮箱验证码
 
 ```
 id		 int REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-wxname	 varchar(20),	-- 微信用户名
-openid	 char(28) UNIQUE,	-- 微信id
+wxname	 varchar(20),     -- 微信用户名
+openid	 char(28) UNIQUE, -- 微信id
 ```
 
 

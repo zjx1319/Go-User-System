@@ -45,6 +45,7 @@ GET /user/token?username="用户名"&password="密码"
 
 ```
 {
+	"id": "用户ID",
     "token": "JWT令牌",
     "expire_time": 1234567890 // JWT令牌到期时间
 }
@@ -62,7 +63,7 @@ GET /user/verify?id="用户ID"&code="验证码"
 
 URL会发送到待验证的邮箱中
 
-### 4. 获取用户信息
+### 4. 获取其他用户信息
 
 权限：
 
@@ -179,6 +180,7 @@ GET /user/WX/token?code="CODE"
 
 ```
 {
+	"id": "用户ID",
     "token": "令牌",
     "expire_time": 123456789 // 令牌到期时间
 }
@@ -204,7 +206,7 @@ GET /user/WX/bind?code="CODE"
 
 ```
 {
-    "nickname": "绑定的微信昵称"
+    "wx_name": "绑定的微信昵称"
 }
 ```
 

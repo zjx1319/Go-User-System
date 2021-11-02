@@ -63,7 +63,7 @@ func UserRegister(c echo.Context) error {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
 
-	verifyURL := config.Config.App.Address + "/api/v1/user/verify?id=" + strconv.Itoa(user.ID) + "&code=" + verifyCode
+	verifyURL := config.Config.SMTP.VerifyURL + "?id=" + strconv.Itoa(user.ID) + "&code=" + verifyCode
 	err = util.SendEmail(user.Email, "注册邮箱验证", "你好！"+user.Username+"，请打开以下链接验证你的邮箱：<a href="+verifyURL+">"+verifyURL+"</a>")
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "发送验证邮件失败")
@@ -116,6 +116,7 @@ type paramUserGetToken struct {
 }
 
 type responseUserGetToken struct {
+	ID     int    `json:"id"`
 	Token  string `json:"token"`
 	Expire int64  `json:"expire_time"`
 }
@@ -155,6 +156,7 @@ func UserGetToken(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, responseUserGetToken{
+		ID:     user.ID,
 		Token:  t,
 		Expire: expireTime,
 	})
@@ -301,7 +303,7 @@ func UserUpdateInfo(c echo.Context) error {
 			return util.ErrorResponse(c, http.StatusInternalServerError, "")
 		}
 
-		verifyURL := config.Config.App.Address + "/api/v1/user/verify?id=" + strconv.Itoa(ID) + "&code=" + verifyCode
+		verifyURL := config.Config.SMTP.VerifyURL + "?id=" + strconv.Itoa(ID) + "&code=" + verifyCode
 		err = util.SendEmail(param.Email, "注册邮箱验证", "你好！你的邮箱已更改，请打开以下链接验证你的邮箱：<a href="+verifyURL+">"+verifyURL+"</a>")
 		if err != nil {
 			return util.ErrorResponse(c, http.StatusInternalServerError, "发送验证邮件失败")
@@ -426,7 +428,7 @@ func UserBindWX(c echo.Context) error {
 
 	err = model.BindWX(userID, wxResponseInfo.Nickname, wxResponse.Openid)
 	if err != nil {
-		return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		return util.ErrorResponse(c, http.StatusBadRequest, "超时或已绑定其他账号")
 	}
 
 	return c.JSON(http.StatusOK, responseUserBindWX{
@@ -486,6 +488,7 @@ func UserGetTokenWX(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, responseUserGetToken{
+		ID:     user.ID,
 		Token:  t,
 		Expire: expireTime,
 	})

@@ -19,10 +19,11 @@ type TypePGConfig struct {
 }
 
 type TypeSMTPConfig struct {
-	Server   string `json:"server"`
-	Port     int    `json:"port"`
-	Address  string `json:"address"`
-	Password string `json:"password"`
+	Server    string `json:"server"`
+	Port      int    `json:"port"`
+	Address   string `json:"address"`
+	Password  string `json:"password"`
+	VerifyURL string `json:"verify_url"`
 }
 
 type TypeJWTConfig struct {
