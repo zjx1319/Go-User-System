@@ -18,6 +18,13 @@ type TypePGConfig struct {
 	Database string `json:"database"`
 }
 
+type TypeRDConfig struct {
+	Address  string `json:"address"`
+	Port     int    `json:"port"`
+	Password string `json:"password"`
+	Database int    `json:"database"`
+}
+
 type TypeSMTPConfig struct {
 	Server    string `json:"server"`
 	Port      int    `json:"port"`
@@ -39,6 +46,7 @@ type TypeWXConfig struct {
 type TypeConfig struct {
 	App  TypeAppConfig  `json:"app"`
 	PG   TypePGConfig   `json:"pg"`
+	RD   TypeRDConfig   `json:"rd"`
 	SMTP TypeSMTPConfig `json:"smtp"`
 	JWT  TypeJWTConfig  `json:"jwt"`
 	WX   TypeWXConfig   `json:"wx"`

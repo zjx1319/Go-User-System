@@ -287,6 +287,10 @@ func UserUpdateInfo(c echo.Context) error {
 
 	if param.Password != "" {
 		param.Password = util.MD5(param.Password)
+		err = model.BanToken(c.Get("user").(*jwt.Token).Raw)
+		if err != nil {
+			return util.ErrorResponse(c, http.StatusInternalServerError, "")
+		}
 	}
 
 	err = model.UpdateUser(ID, model.User{
