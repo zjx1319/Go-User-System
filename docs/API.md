@@ -56,12 +56,16 @@ GET /user/token?username="用户名"&password="密码"
 请求：
 
 ```
-GET /user/verify?id="用户ID"&code="验证码"
+POST /user/email
+{
+	"id": "用户ID",
+    "code": "验证码"
+}
 ```
 
 响应：无
 
-URL会发送到待验证的邮箱中
+验证码可发送到待验证的邮箱中,config有相关配置
 
 ### 4. 获取其他用户信息
 
@@ -199,7 +203,10 @@ GET /user/WX/token?code="CODE"
 请求：
 
 ```
-GET /user/WX/bind?code="CODE"
+POST /user/WX
+{
+	"code": "CODE"
+}
 ```
 
 响应：

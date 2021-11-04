@@ -1,0 +1,33 @@
+{
+  "app": {
+    "address": "localhost:8001"
+  },
+  "pg": {
+    "address": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "123456",
+    "database": "postgres"
+  },
+  "rd": {
+  "address": "localhost",
+  "port": 6379,
+  "password": "123456",
+  "database": 0
+  },
+  "smtp": {
+    "server": "mail.qq.com",
+    "port": 25,
+    "address": "123456@qq.com",
+    "password": "123456",
+    "verify_url": "localhost/verify"
+  },
+  "jwt": {
+    "secret": "238ajsSz4tOAScCIA2186165i",
+    "expire": 120
+  },
+  "wx": {
+    "app_id": "123456",
+    "app_secret": "123456"
+  }
+}

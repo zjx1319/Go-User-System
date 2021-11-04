@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 type TypeAppConfig struct {
@@ -48,7 +49,10 @@ var Config TypeConfig
 
 // InitConfig 读入配置
 func InitConfig() {
-	configFilename := "config.json"
+	configFilename := "default.json"
+	if filename, ok := os.LookupEnv("CONFIG_FILE"); ok {
+		configFilename = filename
+	}
 
 	configFile, err := ioutil.ReadFile("./config/" + configFilename)
 
