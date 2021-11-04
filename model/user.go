@@ -90,36 +90,26 @@ func IsUserAdmin(ID int) (is bool, err error) {
 }
 
 func UpdateUser(ID int, user User) (err error) {
-	var query string
+	query := make(map[string]string)
 	if user.Username != "" {
-		if query != "" {
-			query = query + ","
-		}
-		query = query + "username='" + user.Username + "'"
+		query["username"] = user.Username
 	}
 	if user.Password != "" {
-		if query != "" {
-			query = query + ","
-		}
-		query = query + "password='" + user.Password + "'"
+		query["password"] = user.Password
 	}
 	if user.Email != "" {
-		if query != "" {
-			query = query + ","
-		}
-		query = query + "email='" + user.Email + "'"
+		query["email"] = user.Email
 	}
 	if user.Role != "" {
-		if query != "" {
-			query = query + ","
+		query["role"] = user.Role
+	}
+	for key, value := range query {
+		queryStr := "UPDATE users SET $1=$2 WHERE id = $3;"
+		err = PG.QueryRow(queryStr, key, value, ID).Scan()
+		if err != sql.ErrNoRows && err != nil {
+			return
 		}
-		query = query + "role='" + user.Role + "'"
 	}
-	if query == "" {
-		return nil
-	}
-	query = "UPDATE users SET " + query + " WHERE id = $1;"
-	err = PG.QueryRow(query, ID).Scan()
 	if err == sql.ErrNoRows {
 		err = nil
 	}

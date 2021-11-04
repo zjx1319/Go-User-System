@@ -5,6 +5,7 @@ import (
 	"Go-User-System/model"
 	"Go-User-System/util"
 	"encoding/json"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"io/ioutil"
@@ -63,8 +64,8 @@ func UserRegister(c echo.Context) error {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
 
-	verifyURL := config.Config.SMTP.VerifyURL + "?id=" + strconv.Itoa(user.ID) + "&code=" + verifyCode
-	err = util.SendEmail(user.Email, "注册邮箱验证", "你好！"+user.Username+"，请打开以下链接验证你的邮箱：<a href="+verifyURL+">"+verifyURL+"</a>")
+	verifyURL := fmt.Sprintf("%s?id=%d&code=%s", config.Config.SMTP.VerifyURL, user.ID, verifyCode)
+	err = util.SendEmail(user.Email, "注册邮箱验证", fmt.Sprintf("你好！%s，请打开以下链接验证你的邮箱：<a href=%s>%s</a>", user.Username, verifyURL, verifyURL))
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "发送验证邮件失败")
 	}
@@ -303,8 +304,8 @@ func UserUpdateInfo(c echo.Context) error {
 			return util.ErrorResponse(c, http.StatusInternalServerError, "")
 		}
 
-		verifyURL := config.Config.SMTP.VerifyURL + "?id=" + strconv.Itoa(ID) + "&code=" + verifyCode
-		err = util.SendEmail(param.Email, "注册邮箱验证", "你好！你的邮箱已更改，请打开以下链接验证你的邮箱：<a href="+verifyURL+">"+verifyURL+"</a>")
+		verifyURL := fmt.Sprintf("%s?id=%d&code=%s", config.Config.SMTP.VerifyURL, ID, verifyCode)
+		err = util.SendEmail(param.Email, "更改邮箱验证", fmt.Sprintf("你好！你的邮箱已更改，请打开以下链接验证你的邮箱：<a href=%s>%s</a>", verifyURL, verifyURL))
 		if err != nil {
 			return util.ErrorResponse(c, http.StatusInternalServerError, "发送验证邮件失败")
 		}
@@ -390,7 +391,7 @@ func UserBindWX(c echo.Context) error {
 	}
 	userID := int(c.Get("user").(*jwt.Token).Claims.(jwt.MapClaims)["ID"].(float64))
 
-	response, err := http.Get("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" + config.Config.WX.AppID + "&secret=" + config.Config.WX.AppSecret + "&code=" + param.Code + "&grant_type=authorization_code")
+	response, err := http.Get(fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code", config.Config.WX.AppID, config.Config.WX.AppSecret, param.Code))
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
@@ -408,7 +409,7 @@ func UserBindWX(c echo.Context) error {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
 
-	response, err = http.Get("https://api.weixin.qq.com/sns/userinfo?access_token=" + wxResponse.AccessToken + "&openid=" + wxResponse.Openid + "&lang=zh_CN")
+	response, err = http.Get(fmt.Sprintf("https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN", wxResponse.AccessToken, wxResponse.Openid))
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}
@@ -447,7 +448,7 @@ func UserGetTokenWX(c echo.Context) error {
 		return util.ErrorResponse(c, http.StatusBadRequest, "参数错误")
 	}
 
-	response, err := http.Get("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" + config.Config.WX.AppID + "&secret=" + config.Config.WX.AppSecret + "&code=" + param.Code + "&grant_type=authorization_code")
+	response, err := http.Get(fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code", config.Config.WX.AppID, config.Config.WX.AppSecret, param.Code))
 	if err != nil {
 		return util.ErrorResponse(c, http.StatusInternalServerError, "")
 	}

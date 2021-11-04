@@ -2,7 +2,6 @@ package model
 
 import (
 	"database/sql"
-	"strconv"
 )
 
 func AddVerifyCode(code string, ID int, Email string) (err error) {
@@ -34,8 +33,8 @@ func DeleteVerifyCode(code string) (err error) {
 }
 
 func UpdateUserVerified(ID int, verified bool) (err error) {
-	query := "UPDATE users SET verified=" + strconv.FormatBool(verified) + " WHERE id = $1;"
-	err = PG.QueryRow(query, ID).Scan()
+	query := "UPDATE users SET verified=$1 WHERE id = $2;"
+	err = PG.QueryRow(query, verified, ID).Scan()
 	if err == sql.ErrNoRows {
 		err = nil
 	}
