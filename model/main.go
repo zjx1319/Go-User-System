@@ -3,6 +3,7 @@ package model
 import (
 	"Go-User-System/config"
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -15,9 +16,17 @@ var RD redis.Conn
 
 // InitModel 连接数据库
 func InitModel() {
-	connStr := "host=" + config.Config.PG.Address + " port=" + strconv.Itoa(config.Config.PG.Port)
-	connStr = connStr + " user=" + config.Config.PG.User + " password=" + config.Config.PG.Password
-	connStr = connStr + " database=" + config.Config.PG.Database + " sslmode=disable"
+	pgConfig := make(map[string]string)
+	pgConfig["host"] = config.Config.PG.Address
+	pgConfig["port"] = strconv.Itoa(config.Config.PG.Port)
+	pgConfig["user"] = config.Config.PG.User
+	pgConfig["password"] = config.Config.PG.Password
+	pgConfig["database"] = config.Config.PG.Database
+	connStr := ""
+	for key, value := range pgConfig {
+		connStr += fmt.Sprintf("%s:%s ", key, value)
+	}
+	connStr += " sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Panic(err)
