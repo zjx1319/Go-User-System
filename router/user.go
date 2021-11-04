@@ -16,7 +16,7 @@ func initUserGroup(group *echo.Group) {
 	group.POST("", controller.UserRegister)
 	group.GET("/token", controller.UserGetToken)
 
-	group.GET("/verify", controller.UserVerify)
+	group.POST("/email", controller.UserVerify)
 
 	group.GET("", controller.UserGetAllInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
 	group.GET("/:id", controller.UserGetInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
@@ -25,7 +25,7 @@ func initUserGroup(group *echo.Group) {
 
 	group.GET("/WX/token", controller.UserGetTokenWX)
 	group.GET("/WX/bind", controller.UserBindWX, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
-	group.GET("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
+	group.POST("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
 }
 
 func JWTCheck(next echo.HandlerFunc) echo.HandlerFunc {
