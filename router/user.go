@@ -20,6 +20,6 @@ func initUserGroup(group *echo.Group) {
 	group.DELETE("/:id", controller.UserDelete, middleware.JWT([]byte(config.Config.JWT.Secret)))
 
 	group.GET("/WX/token", controller.UserGetTokenWX)
-	group.GET("/WX/bind", controller.UserBindWX, middleware.JWT([]byte(config.Config.JWT.Secret)))
-	group.POST("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
+	group.POST("/WX", controller.UserBindWX, middleware.JWT([]byte(config.Config.JWT.Secret)))
+	group.GET("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
 }

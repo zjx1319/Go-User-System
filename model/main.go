@@ -22,7 +22,7 @@ func InitModel() {
 	pgConfig["database"] = config.Config.PG.Database
 	connStr := ""
 	for key, value := range pgConfig {
-		connStr += fmt.Sprintf("%s:%s ", key, value)
+		connStr += fmt.Sprintf("%s=%s ", key, value)
 	}
 	connStr += " sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
