@@ -104,8 +104,8 @@ func UpdateUser(ID int, user User) (err error) {
 		query["role"] = user.Role
 	}
 	for key, value := range query {
-		queryStr := "UPDATE users SET $1=$2 WHERE id = $3;"
-		err = PG.QueryRow(queryStr, key, value, ID).Scan()
+		queryStr := "UPDATE users SET " + key + "=$1 WHERE id=$2;"
+		err = PG.QueryRow(queryStr, value, ID).Scan()
 		if err != sql.ErrNoRows && err != nil {
 			return
 		}
