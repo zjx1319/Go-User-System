@@ -23,9 +23,9 @@ func initUserGroup(group *echo.Group) {
 	group.PUT("/:id", controller.UserUpdateInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
 	group.DELETE("/:id", controller.UserDelete, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
 
+	group.POST("/WX", controller.UserBindWX, middleware.JWT([]byte(config.Config.JWT.Secret)))
+	group.GET("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)))
 	group.GET("/WX/token", controller.UserGetTokenWX)
-	group.GET("/WX/bind", controller.UserBindWX, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
-	group.POST("/WX", controller.UserGetWXInfo, middleware.JWT([]byte(config.Config.JWT.Secret)), JWTCheck)
 }
 
 func JWTCheck(next echo.HandlerFunc) echo.HandlerFunc {
